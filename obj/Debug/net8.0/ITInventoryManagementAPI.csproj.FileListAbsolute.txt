@@ -145,3 +145,4 @@
 /home/bilos/Desktop/ITInventoryManagementAPI/bin/Debug/net8.0/Microsoft.Extensions.Identity.Core.dll
 /home/bilos/Desktop/ITInventoryManagementAPI/bin/Debug/net8.0/Microsoft.Extensions.Identity.Stores.dll
 /home/bilos/Desktop/ITInventoryManagementAPI/bin/Debug/net8.0/Microsoft.Extensions.Options.dll
+/home/bilos/Desktop/ITInventoryManagementAPI/obj/Debug/net8.0/ITInventoryManagementAPI.sourcelink.json

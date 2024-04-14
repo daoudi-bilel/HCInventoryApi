@@ -17,27 +17,38 @@ namespace ITInventoryManagementAPI.Services
             _context = context;
         }
 
-        public async Task<PagedResponse<Employee>> GetEmployeesAsync(int pageNumber = 1, int pageSize = 10)
+       public async Task<PagedResponse<Employee>> GetEmployeesAsync(int page = 1, int size = 10, string sortOrder = "ASC", string keyword = "")
         {
-            var skip = (pageNumber - 1) * pageSize;
-            var employees = await _context.Employees
-                .Skip(skip)
-                .Take(pageSize)
-                .ToListAsync();
+            var skip = (page - 1) * size;
+            IQueryable<Employee> query = _context.Employees;
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(e => e.Name.Contains(keyword) || e.Email.Contains(keyword));
+            }
 
+            if (sortOrder.Equals("DESC", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.OrderByDescending(e => e.Name);
+            }
+            else
+            {
+                query = query.OrderBy(e => e.Name);
+            }
+
+            var employees = await query.Skip(skip).Take(size).ToListAsync();
             var totalItems = await _context.Employees.CountAsync();
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            var totalPages = (int)Math.Ceiling((double)totalItems / size);
 
             return new PagedResponse<Employee>
             {
                 Content = employees,
                 TotalItems = totalItems,
                 TotalPages = totalPages,
-                PageNumber = pageNumber,
-                PageSize = pageSize
+                page = page,
+                size = size
             };
         }
-
 
         public async Task<Employee> GetEmployeeByIdAsync(int id)
         {
@@ -63,19 +74,25 @@ namespace ITInventoryManagementAPI.Services
             return employee;
         }
 
-        public async Task<bool> DeleteEmployeeAsync(int id)
+      public async Task<DeleteEmployeeResult> DeleteEmployeeAsync(int id)
         {
             var employee = await _context.Employees.FindAsync(id);
             if (employee == null)
             {
-                return false;
+                return DeleteEmployeeResult.EmployeeNotFound;
+            }
+            
+            var hasRelatedDevices = await _context.Devices.AnyAsync(d => d.EmployeeId == id);
+            if (hasRelatedDevices)
+            {
+                return DeleteEmployeeResult.HasRelatedDevices;
             }
 
             _context.Employees.Remove(employee);
             await _context.SaveChangesAsync();
-            return true;
+            
+            return DeleteEmployeeResult.Success;
         }
-
         public async Task<IEnumerable<Employee>> SearchEmployeesByNameOrEmailAsync(string searchTerm)
         {
             return await _context.Employees
@@ -83,4 +100,5 @@ namespace ITInventoryManagementAPI.Services
                 .ToListAsync();
         }
     }
+
 }

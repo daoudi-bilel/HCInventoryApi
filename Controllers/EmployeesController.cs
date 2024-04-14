@@ -20,13 +20,15 @@ namespace ITInventoryManagementAPI.Controllers
         }
 
         [HttpGet]
-        [SwaggerOperation(Summary = "Get all employees with pagination")]
+        [SwaggerOperation(Summary = "Get all employees with pagination, optional keyword, and sorting")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<PagedResponse<Employee>>> GetEmployees(
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10)
+            [FromQuery] int page = 1,
+            [FromQuery] int size = 10,
+            [FromQuery] string keyword = "",
+            [FromQuery] string sortOrder = "ASC")
         {
-            var pagedResponse = await _employeeService.GetEmployeesAsync(pageNumber, pageSize);
+            var pagedResponse = await _employeeService.GetEmployeesAsync(page, size, sortOrder, keyword);
             return Ok(pagedResponse);
         }
             
@@ -72,15 +74,27 @@ namespace ITInventoryManagementAPI.Controllers
         [SwaggerOperation(Summary = "Delete an employee by ID")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> DeleteEmployee(int id)
         {
             var result = await _employeeService.DeleteEmployeeAsync(id);
-            if (!result)
+            
+            switch (result)
             {
-                return NotFound();
+                case DeleteEmployeeResult.EmployeeNotFound:
+                    return NotFound(new { message = "Employee not found." });
+                
+                case DeleteEmployeeResult.HasRelatedDevices:
+                    return Conflict(new { message = "Cannot delete employee. There are devices related to this employee. Please delete the devices first." });
+                
+                case DeleteEmployeeResult.Success:
+                    return NoContent();
+                
+                default:
+                    throw new InvalidOperationException("Unexpected result from DeleteEmployeeAsync");
             }
-            return NoContent();
         }
+
 
         [HttpGet("search")]
         [SwaggerOperation(Summary = "Search employees by name or email")]

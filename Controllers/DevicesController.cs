@@ -3,6 +3,8 @@ using ITInventoryManagementAPI.Models.Responses;
 using ITInventoryManagementAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Swashbuckle.AspNetCore.Annotations; // Add this line for Swagger annotations
+using Microsoft.AspNetCore.Http;
 
 namespace ITInventoryManagementAPI.Controllers
 {
@@ -18,15 +20,22 @@ namespace ITInventoryManagementAPI.Controllers
         }
 
         [HttpGet]
+        [SwaggerOperation(Summary = "Get all devices with pagination and optional keyword")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<PagedResponse<Device>>> GetDevices(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int page = 1,
+            [FromQuery] int size = 10,
+            [FromQuery] string keyword = "",
+            [FromQuery] string sortOrder = "ASC")
         {
-            var pagedResponse = await _deviceService.GetDevicesAsync(pageNumber, pageSize);
+            var pagedResponse = await _deviceService.GetDevicesAsync(page, size, sortOrder, keyword);
             return Ok(pagedResponse);
         }
-
+        
         [HttpGet("{id}")]
+        [SwaggerOperation(Summary = "Get a device by ID")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Device>> GetDevice(int id)
         {
             var device = await _deviceService.GetDeviceByIdAsync(id);
@@ -34,10 +43,13 @@ namespace ITInventoryManagementAPI.Controllers
             {
                 return NotFound();
             }
-            return device;
+            return Ok(device);
         }
 
         [HttpPut("{id}")]
+        [SwaggerOperation(Summary = "Update an existing device")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PutDevice(int id, Device device)
         {
             var updatedDevice = await _deviceService.UpdateDeviceAsync(id, device);
@@ -49,13 +61,19 @@ namespace ITInventoryManagementAPI.Controllers
         }
 
         [HttpPost]
+        [SwaggerOperation(Summary = "Create a new device")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<Device>> PostDevice(Device device)
         {
             var createdDevice = await _deviceService.CreateDeviceAsync(device);
-            return CreatedAtAction("GetDevice", new { id = createdDevice.Id }, createdDevice);
+            return CreatedAtAction(nameof(GetDevice), new { id = createdDevice.Id }, createdDevice);
         }
 
         [HttpDelete("{id}")]
+        [SwaggerOperation(Summary = "Delete a device by ID")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteDevice(int id)
         {
             var result = await _deviceService.DeleteDeviceAsync(id);
@@ -67,13 +85,18 @@ namespace ITInventoryManagementAPI.Controllers
         }
 
         [HttpGet("search")]
-        public async Task<ActionResult<PagedResponse<Device>>> SearchDevices(string searchTerm, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        [SwaggerOperation(Summary = "Search devices by description or type")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<PagedResponse<Device>>> SearchDevices(string searchTerm, [FromQuery] int page = 1, [FromQuery] int size = 10)
         {
-            var pagedResponse = await _deviceService.SearchDevicesByDescriptionOrTypeAsync(searchTerm, pageNumber, pageSize);
+            var pagedResponse = await _deviceService.SearchDevicesByDescriptionOrTypeAsync(searchTerm, page, size);
             return Ok(pagedResponse);
         }
 
-        [HttpPut("{deviceId}/link-employee/{employeeId}")]
+        [HttpPut("{deviceId}/employees/{employeeId}")]
+        [SwaggerOperation(Summary = "Link a device to an employee")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
         public async Task<IActionResult> LinkDeviceToEmployee(int deviceId, int employeeId)
         {
             var result = await _deviceService.LinkDeviceToEmployeeAsync(deviceId, employeeId);

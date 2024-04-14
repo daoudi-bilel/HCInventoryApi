@@ -16,26 +16,42 @@ namespace ITInventoryManagementAPI.Services
             _context = context;
         }
 
-        public async Task<PagedResponse<Device>> GetDevicesAsync(int pageNumber = 1, int pageSize = 10)
+       public async Task<PagedResponse<Device>> GetDevicesAsync(int page = 1, int size = 10, string sortOrder = "ASC", string keyword = "")
         {
-            var skip = (pageNumber - 1) * pageSize;
-            var devices = await _context.Devices
-                .Skip(skip)
-                .Take(pageSize)
-                .ToListAsync();
+            var skip = (page - 1) * size;
+            IQueryable<Device> query = _context.Devices;
 
+            // Add keyword search if provided
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(d => d.Description.Contains(keyword) || d.Type.Contains(keyword));
+            }
+
+            // Add sorting
+            if (sortOrder.Equals("DESC", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.OrderByDescending(d => d.Description); // or the desired property to sort by
+            }
+            else
+            {
+                query = query.OrderBy(d => d.Description); // or the desired property to sort by
+            }
+
+            var devices = await query.Skip(skip).Take(size).ToListAsync();
             var totalItems = await _context.Devices.CountAsync();
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            var totalPages = (int)Math.Ceiling((double)totalItems / size);
 
             return new PagedResponse<Device>
             {
                 Content = devices,
                 TotalItems = totalItems,
                 TotalPages = totalPages,
-                PageNumber = pageNumber,
-                PageSize = pageSize
+                page = page,
+                size = size
             };
         }
+
 
         public async Task<Device> GetDeviceByIdAsync(int id)
         {
@@ -74,28 +90,28 @@ namespace ITInventoryManagementAPI.Services
             return true;
         }
 
-        public async Task<PagedResponse<Device>> SearchDevicesByDescriptionOrTypeAsync(string searchTerm, int pageNumber = 1, int pageSize = 10)
+        public async Task<PagedResponse<Device>> SearchDevicesByDescriptionOrTypeAsync(string searchTerm, int page = 1, int size = 10)
         {
-            var skip = (pageNumber - 1) * pageSize;
+            var skip = (page - 1) * size;
             var devices = await _context.Devices
                 .Where(d => d.Description.Contains(searchTerm) || d.Type.Contains(searchTerm))
                 .Skip(skip)
-                .Take(pageSize)
+                .Take(size)
                 .ToListAsync();
 
             var totalItems = await _context.Devices
                 .Where(d => d.Description.Contains(searchTerm) || d.Type.Contains(searchTerm))
                 .CountAsync();
 
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+            var totalPages = (int)Math.Ceiling((double)totalItems / size);
 
             return new PagedResponse<Device>
             {
                 Content = devices,
                 TotalItems = totalItems,
                 TotalPages = totalPages,
-                PageNumber = pageNumber,
-                PageSize = pageSize
+                page = page,
+                size = size
             };
         }
 

@@ -1,18 +1,23 @@
 using ITInventoryManagementAPI.Models;
+using ITInventoryManagementAPI.Models.Responses;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ITInventoryManagementAPI.Models.Responses;
-
 
 namespace ITInventoryManagementAPI.Services
 {
     public interface IEmployeeService
     {
-       Task<PagedResponse<Employee>> GetEmployeesAsync(int pageNumber = 1, int pageSize = 10);
+        Task<PagedResponse<Employee>> GetEmployeesAsync(int page = 1, int size = 10, string sortOrder = "ASC", string keyword = "");
         Task<Employee> GetEmployeeByIdAsync(int id);
         Task<Employee> CreateEmployeeAsync(Employee employee);
         Task<Employee> UpdateEmployeeAsync(int id, Employee employee);
-        Task<bool> DeleteEmployeeAsync(int id);
+        Task<DeleteEmployeeResult> DeleteEmployeeAsync(int id);
         Task<IEnumerable<Employee>> SearchEmployeesByNameOrEmailAsync(string searchTerm);
     }
+        public enum DeleteEmployeeResult
+        {
+            Success,
+            EmployeeNotFound,
+            HasRelatedDevices
+        }
 }
