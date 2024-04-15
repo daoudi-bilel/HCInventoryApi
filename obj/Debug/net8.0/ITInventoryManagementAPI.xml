@@ -16,5 +16,41 @@
         <member name="M:ITInventoryManagementAPI.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:ITInventoryManagementAPI.Migrations.UpdateEmployeeDeviceRelationship">
+            <inheritdoc />
+        </member>
+        <member name="M:ITInventoryManagementAPI.Migrations.UpdateEmployeeDeviceRelationship.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ITInventoryManagementAPI.Migrations.UpdateEmployeeDeviceRelationship.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ITInventoryManagementAPI.Migrations.UpdateEmployeeDeviceRelationship.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:ITInventoryManagementAPI.Migrations.UpdateEmployeeModels">
+            <inheritdoc />
+        </member>
+        <member name="M:ITInventoryManagementAPI.Migrations.UpdateEmployeeModels.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ITInventoryManagementAPI.Migrations.UpdateEmployeeModels.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ITInventoryManagementAPI.Migrations.UpdateEmployeeModels.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:ITInventoryManagementAPI.Migrations.UpdateEmployeeDeviceRelationshipNew">
+            <inheritdoc />
+        </member>
+        <member name="M:ITInventoryManagementAPI.Migrations.UpdateEmployeeDeviceRelationshipNew.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ITInventoryManagementAPI.Migrations.UpdateEmployeeDeviceRelationshipNew.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:ITInventoryManagementAPI.Migrations.UpdateEmployeeDeviceRelationshipNew.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
     </members>
 </doc>

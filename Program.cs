@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using Microsoft.OpenApi.Models;
 using ITInventoryManagementAPI.Services;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,33 +13,37 @@ builder.Services.AddCors(options =>
 {
    options.AddDefaultPolicy(builder =>
     {
-        builder.WithOrigins("http://localhost:4200")
-               .WithMethods("GET", "POST", "PUT", "DELETE")
+        builder.WithOrigins("http://localhost:4200","https://hcinventory.netlify.app")
+               .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH")
                .WithHeaders("Content-Type", "Authorization");
     });
 });
 
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(options =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
-        Title = "ITInventoryManagementAPI",
-        Description = "API for managing IT inventory",
+        Title = "HCInventory API",
+        Description = "It inventory management api",
+        TermsOfService = new Uri("https://bilos.netlify.app"),
+        Contact = new OpenApiContact
+        {
+            Name = "Daoudi Bilel",
+            Email = "daoudi-bilel@outlook.com"
+        },
     });
-
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    c.IncludeXmlComments(xmlPath);
-}
-);
-
+});
 
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 
 
-builder.Services.AddControllers(); 
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+});
+
 builder.Services.AddDbContext<ITInventoryContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -49,12 +54,12 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ITInventoryManagementAPI v1");
-    });
+    app.UseDeveloperExceptionPage();
+    
 }
+
+    app.UseSwagger();
+    app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 

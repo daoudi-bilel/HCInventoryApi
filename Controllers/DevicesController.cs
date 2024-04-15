@@ -25,9 +25,11 @@ namespace ITInventoryManagementAPI.Controllers
         public async Task<ActionResult<PagedResponse<Device>>> GetDevices(
             [FromQuery] int page = 1,
             [FromQuery] int size = 10,
-            [FromQuery] string keyword = "",
-            [FromQuery] string sortOrder = "ASC")
+           [FromQuery] string? keyword = null,
+            [FromQuery] string? sortOrder = null)
         {
+            keyword ??= "";
+            sortOrder ??= "ASC";
             var pagedResponse = await _deviceService.GetDevicesAsync(page, size, sortOrder, keyword);
             return Ok(pagedResponse);
         }
@@ -84,28 +86,5 @@ namespace ITInventoryManagementAPI.Controllers
             return NoContent();
         }
 
-        [HttpGet("search")]
-        [SwaggerOperation(Summary = "Search devices by description or type")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<PagedResponse<Device>>> SearchDevices(string searchTerm, [FromQuery] int page = 1, [FromQuery] int size = 10)
-        {
-            var pagedResponse = await _deviceService.SearchDevicesByDescriptionOrTypeAsync(searchTerm, page, size);
-            return Ok(pagedResponse);
-        }
-
-        [HttpPut("{deviceId}/employees/{employeeId}")]
-        [SwaggerOperation(Summary = "Link a device to an employee")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
-        public async Task<IActionResult> LinkDeviceToEmployee(int deviceId, int employeeId)
-        {
-            var result = await _deviceService.LinkDeviceToEmployeeAsync(deviceId, employeeId);
-            if (!result)
-            {
-                return NotFound("Device or Employee not found.");
-            }
-
-            return NoContent();
-        }
     }
 }

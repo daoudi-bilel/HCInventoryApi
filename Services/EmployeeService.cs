@@ -17,10 +17,11 @@ namespace ITInventoryManagementAPI.Services
             _context = context;
         }
 
-       public async Task<PagedResponse<Employee>> GetEmployeesAsync(int page = 1, int size = 10, string sortOrder = "ASC", string keyword = "")
+      public async Task<PagedResponse<EmployeeDto>> GetEmployeesAsync(int page = 1, int size = 10, string sortOrder = "ASC", string keyword = "")
         {
             var skip = (page - 1) * size;
             IQueryable<Employee> query = _context.Employees;
+
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(e => e.Name.Contains(keyword) || e.Email.Contains(keyword));
@@ -35,12 +36,21 @@ namespace ITInventoryManagementAPI.Services
                 query = query.OrderBy(e => e.Name);
             }
 
-            var employees = await query.Skip(skip).Take(size).ToListAsync();
-            var totalItems = await _context.Employees.CountAsync();
+            var employees = await query
+                .Skip(skip)
+                .Take(size)
+                .Select(e => new EmployeeDto
+                {
+                    Id = e.Id,
+                    Name = e.Name,
+                    Email = e.Email
+                })
+                .ToListAsync();
 
+            var totalItems = await _context.Employees.CountAsync();
             var totalPages = (int)Math.Ceiling((double)totalItems / size);
 
-            return new PagedResponse<Employee>
+            return new PagedResponse<EmployeeDto>
             {
                 Content = employees,
                 TotalItems = totalItems,
@@ -50,9 +60,32 @@ namespace ITInventoryManagementAPI.Services
             };
         }
 
-        public async Task<Employee> GetEmployeeByIdAsync(int id)
+
+       public async Task<SingleEmployeeDto> GetEmployeeByIdAsync(int id)
         {
-            return await _context.Employees.FindAsync(id);
+            var employee = await _context.Employees
+                .Include(e => e.Devices)
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (employee == null)
+            {
+                throw new InvalidOperationException($"Employee with ID {id} not found.");
+            }
+
+            var employeeDto = new SingleEmployeeDto
+            {
+                Id = employee.Id,
+                Name = employee.Name,
+                Email = employee.Email,
+                Devices = employee.Devices.Select(d => new DeviceDto
+                {
+                    Id = d.Id,
+                    Type = d.Type,
+                    Description = d.Description
+                }).ToList()
+            };
+
+            return employeeDto;
         }
 
         public async Task<Employee> CreateEmployeeAsync(Employee employee)
@@ -62,17 +95,22 @@ namespace ITInventoryManagementAPI.Services
             return employee;
         }
 
-        public async Task<Employee> UpdateEmployeeAsync(int id, Employee employee)
+        public async Task<Employee> UpdateEmployeeAsync(int id, EmployeeDto employee)
         {
-            if (id != employee.Id)
+            var existingEmployee = await _context.Employees.FindAsync(id);
+            if (existingEmployee == null)
             {
-                return null;
+                throw new InvalidOperationException($"Employee with ID {id} not found.");
             }
+            existingEmployee.Name = employee.Name;
+            existingEmployee.Email = employee.Email;
 
-            _context.Entry(employee).State = EntityState.Modified;
+            _context.Entry(existingEmployee).State = EntityState.Modified;
             await _context.SaveChangesAsync();
-            return employee;
+
+            return existingEmployee;
         }
+
 
       public async Task<DeleteEmployeeResult> DeleteEmployeeAsync(int id)
         {
@@ -93,12 +131,49 @@ namespace ITInventoryManagementAPI.Services
             
             return DeleteEmployeeResult.Success;
         }
-        public async Task<IEnumerable<Employee>> SearchEmployeesByNameOrEmailAsync(string searchTerm)
+
+        public async Task UpdateEmployeeDevicesAsync(int employeeId, List<int> deviceIds)
         {
-            return await _context.Employees
-                .Where(e => e.Name.Contains(searchTerm) || e.Email.Contains(searchTerm))
-                .ToListAsync();
+            var existingEmployee = await _context.Employees
+                .Include(e => e.Devices)
+                .FirstOrDefaultAsync(e => e.Id == employeeId);
+
+            if (existingEmployee == null)
+            {
+                throw new InvalidOperationException($"Employee with ID {employeeId} not found.");
+            }
+
+            // Compare the existing devices with the new device IDs
+            var existingDeviceIds = existingEmployee.Devices.Select(d => d.Id).ToList();
+            var devicesToAdd = deviceIds.Except(existingDeviceIds).ToList();
+            var devicesToRemove = existingDeviceIds.Except(deviceIds).ToList();
+
+            // Add new devices
+            foreach (var deviceId in devicesToAdd)
+            {
+                var device = await _context.Devices.FindAsync(deviceId);
+                if (device != null)
+                {
+                    existingEmployee.Devices.Add(device);
+                }
+            }
+
+            // Remove devices
+            foreach (var deviceId in devicesToRemove)
+            {
+                var device = existingEmployee.Devices.FirstOrDefault(d => d.Id == deviceId);
+                if (device != null)
+                {
+                    existingEmployee.Devices.Remove(device);
+                }
+            }
+
+            // Update the employee in the database
+            _context.Entry(existingEmployee).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
         }
+
+
     }
 
 }

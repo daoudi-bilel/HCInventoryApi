@@ -21,20 +21,18 @@ namespace ITInventoryManagementAPI.Services
             var skip = (page - 1) * size;
             IQueryable<Device> query = _context.Devices;
 
-            // Add keyword search if provided
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(d => d.Description.Contains(keyword) || d.Type.Contains(keyword));
             }
 
-            // Add sorting
             if (sortOrder.Equals("DESC", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.OrderByDescending(d => d.Description); // or the desired property to sort by
+                query = query.OrderByDescending(d => d.Description); 
             }
             else
             {
-                query = query.OrderBy(d => d.Description); // or the desired property to sort by
+                query = query.OrderBy(d => d.Description); 
             }
 
             var devices = await query.Skip(skip).Take(size).ToListAsync();
@@ -90,32 +88,8 @@ namespace ITInventoryManagementAPI.Services
             return true;
         }
 
-        public async Task<PagedResponse<Device>> SearchDevicesByDescriptionOrTypeAsync(string searchTerm, int page = 1, int size = 10)
-        {
-            var skip = (page - 1) * size;
-            var devices = await _context.Devices
-                .Where(d => d.Description.Contains(searchTerm) || d.Type.Contains(searchTerm))
-                .Skip(skip)
-                .Take(size)
-                .ToListAsync();
 
-            var totalItems = await _context.Devices
-                .Where(d => d.Description.Contains(searchTerm) || d.Type.Contains(searchTerm))
-                .CountAsync();
-
-            var totalPages = (int)Math.Ceiling((double)totalItems / size);
-
-            return new PagedResponse<Device>
-            {
-                Content = devices,
-                TotalItems = totalItems,
-                TotalPages = totalPages,
-                page = page,
-                size = size
-            };
-        }
-
-         public async Task<bool> LinkDeviceToEmployeeAsync(int deviceId, int employeeId)
+       public async Task<bool> LinkDeviceToEmployeeAsync(int deviceId, int employeeId)
         {
             var device = await _context.Devices.FindAsync(deviceId);
             if (device == null)
@@ -125,6 +99,11 @@ namespace ITInventoryManagementAPI.Services
 
             var employee = await _context.Employees.FindAsync(employeeId);
             if (employee == null)
+            {
+                return false;
+            }
+
+            if (device.EmployeeId != null && device.EmployeeId != employeeId)
             {
                 return false;
             }

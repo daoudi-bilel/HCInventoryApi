@@ -11,11 +11,13 @@ namespace ITInventoryManagementAPI.Controllers
     public class EmployeesController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
+        private readonly IDeviceService _deviceService;
         private readonly ILogger<EmployeesController> _logger;
 
-        public EmployeesController(IEmployeeService employeeService, ILogger<EmployeesController> logger)
+        public EmployeesController(IEmployeeService employeeService, IDeviceService deviceService, ILogger<EmployeesController> logger)
         {
             _employeeService = employeeService;
+            _deviceService = deviceService;
             _logger = logger;
         }
 
@@ -25,9 +27,11 @@ namespace ITInventoryManagementAPI.Controllers
         public async Task<ActionResult<PagedResponse<Employee>>> GetEmployees(
             [FromQuery] int page = 1,
             [FromQuery] int size = 10,
-            [FromQuery] string keyword = "",
-            [FromQuery] string sortOrder = "ASC")
+            [FromQuery] string? keyword = null,
+            [FromQuery] string? sortOrder = null)
         {
+            keyword ??= "";
+            sortOrder ??= "ASC";
             var pagedResponse = await _employeeService.GetEmployeesAsync(page, size, sortOrder, keyword);
             return Ok(pagedResponse);
         }
@@ -36,9 +40,25 @@ namespace ITInventoryManagementAPI.Controllers
         [SwaggerOperation(Summary = "Create a new employee")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<Employee>> PostEmployee(Employee employee)
+        public async Task<ActionResult<Employee>> PostEmployee(CreateEmployeeDto createEmployeeDto)
         {
+            var employee = new Employee
+            {
+                Name = createEmployeeDto.Name,
+                Email = createEmployeeDto.Email,
+            };
+
+            foreach (var deviceId in createEmployeeDto.DeviceIds)
+            {
+                var device = await _deviceService.GetDeviceByIdAsync(deviceId);
+                if (device != null)
+                {
+                    employee.Devices.Add(device);
+                }
+            }
+
             var createdEmployee = await _employeeService.CreateEmployeeAsync(employee);
+
             return CreatedAtAction(nameof(GetEmployee), new { id = createdEmployee.Id }, createdEmployee);
         }
 
@@ -46,7 +66,7 @@ namespace ITInventoryManagementAPI.Controllers
         [SwaggerOperation(Summary = "Get an employee by ID")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<Employee>> GetEmployee(int id)
+        public async Task<ActionResult<SingleEmployeeDto>> GetEmployee(int id)
         {
             var employee = await _employeeService.GetEmployeeByIdAsync(id);
             if (employee == null)
@@ -60,14 +80,17 @@ namespace ITInventoryManagementAPI.Controllers
         [SwaggerOperation(Summary = "Update an existing employee")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> PutEmployee(int id, Employee employee)
+        public async Task<IActionResult> PutEmployee(int id, EmployeeDto employee)
         {
-            var updatedEmployee = await _employeeService.UpdateEmployeeAsync(id, employee);
-            if (updatedEmployee == null)
+            try
             {
-                return BadRequest();
+                var updatedEmployee = await _employeeService.UpdateEmployeeAsync(id, employee);
+                return NoContent();
             }
-            return NoContent();
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id}")]
@@ -95,14 +118,22 @@ namespace ITInventoryManagementAPI.Controllers
             }
         }
 
-
-        [HttpGet("search")]
-        [SwaggerOperation(Summary = "Search employees by name or email")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<Employee>>> SearchEmployees(string searchTerm)
+        [HttpPatch("{id}/devices")]
+        [SwaggerOperation(Summary = "Update the devices linked to an employee by ID")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateEmployeeDevicesAsync(int id, [FromBody] List<int> deviceIds)
         {
-            var employees = await _employeeService.SearchEmployeesByNameOrEmailAsync(searchTerm);
-            return Ok(employees);
-        }
+            try
+            {
+                await _employeeService.UpdateEmployeeDevicesAsync(id, deviceIds);
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }   
     }
 }

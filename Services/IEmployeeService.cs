@@ -7,12 +7,12 @@ namespace ITInventoryManagementAPI.Services
 {
     public interface IEmployeeService
     {
-        Task<PagedResponse<Employee>> GetEmployeesAsync(int page = 1, int size = 10, string sortOrder = "ASC", string keyword = "");
-        Task<Employee> GetEmployeeByIdAsync(int id);
+        Task<PagedResponse<EmployeeDto>> GetEmployeesAsync(int page = 1, int size = 10, string sortOrder = "ASC", string keyword = "");
+        Task<SingleEmployeeDto> GetEmployeeByIdAsync(int id);
         Task<Employee> CreateEmployeeAsync(Employee employee);
-        Task<Employee> UpdateEmployeeAsync(int id, Employee employee);
+        Task<Employee> UpdateEmployeeAsync(int id, EmployeeDto employee);
         Task<DeleteEmployeeResult> DeleteEmployeeAsync(int id);
-        Task<IEnumerable<Employee>> SearchEmployeesByNameOrEmailAsync(string searchTerm);
+        Task UpdateEmployeeDevicesAsync(int employeeId, List<int> deviceIds);
     }
         public enum DeleteEmployeeResult
         {

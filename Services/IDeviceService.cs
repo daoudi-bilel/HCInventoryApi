@@ -12,7 +12,6 @@ namespace ITInventoryManagementAPI.Services
         Task<Device> CreateDeviceAsync(Device device);
         Task<Device> UpdateDeviceAsync(int id, Device device);
         Task<bool> DeleteDeviceAsync(int id);
-        Task<PagedResponse<Device>> SearchDevicesByDescriptionOrTypeAsync(string searchTerm, int page = 1, int size = 10);
         Task<bool> LinkDeviceToEmployeeAsync(int deviceId, int employeeId);
     }
 }
